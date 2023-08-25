@@ -1,0 +1,4 @@
+census_year,block_id,property_id,base_property_id,building_address,clue_small_area,business_address,trading_name,industry_code,industry_description,seating_type,number_of_seats,longitude,latitude
+2020,1,611394,611394,545-557 Flinders Street MELBOURNE VIC 3000,Melbourne (CBD),553 Flinders Street MELBOURNE VIC 3000,Domino's Pizza,4512,Takeaway Food Services,Seats - Indoor,12,144.95651,-37.82098
+2021,14,103165,103165,1-5 Elizabeth Street MELBOURNE VIC 3000,Melbourne (CBD),"Unit 3, Ground 1 Elizabeth Street MELBOURNE VIC 3000",Subway,4512,Takeaway Food Services,Seats - Indoor,12,144.96461,-37.81806
+2021,87,106057,106057,106 Little Lonsdale Street MELBOURNE VIC 3000,Melbourne (CBD),Ground 106 Little Lonsdale Street MELBOURNE VIC 3000,Troika Bar,4520,"Pubs, Taverns and Bars",Seats - Outdoor,8,144.96859,-37.80915
