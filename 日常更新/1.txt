@@ -1,0 +1,92 @@
+#define _CRT_SECURE_NO_WARNINGS
+#include <iostream>
+#include <string.h>
+
+using namespace std;
+//char fun(char*)
+//{
+//	cout << "dd" << endl;
+//	return -1;
+//}
+//
+//int main()
+//{
+//	const char* s = "one";
+//	char a[5] = { 0 };
+//	char (*f1)(char*) = fun, ch;
+//	f1(&ch);
+//	return 0;
+//}
+//#include<stdio.h>
+//char* f(char* str, char ch)
+//{
+//	char* it1 = str;
+//	char* it2 = str;
+//	while (*it2 != '\0')
+//	{
+//		while (*it2 == ch)
+//		{
+//			it2++;
+//		} 
+//		*it1++ = *it2++;
+//	} 
+//	return str;
+//} 
+//int main() 
+//{
+//	char a[10];
+//	strcpy(a, "abcdcccd");
+//	printf("%s", f(a, 'c'));
+//	return 0;
+//}
+//int main()
+//{
+//	char arr[2][4];
+//	/*strcpy(arr[0], "you");
+//	strcpy(arr[1], "me");
+//	arr[0][3] = '&';
+//	printf("%s \n", arr);*/
+//	cout << &arr[0] << endl;
+//	cout << &arr << endl;
+//	cout << &arr[1] << endl;
+//
+//	return 0;
+//}
+//struct st
+//{
+//	int* p;
+//	int i;
+//	char a;
+//};
+//int main()
+//{
+//	int sz = sizeof(struct st);
+//	return 0;
+//}
+//enum weekday
+//{
+//	sun,
+//	mon = 3,
+//	tue,
+//	wed
+//};
+//int main()
+//{
+//	enum weekday workday;
+//	workday = tue;
+//	printf("%d\n", workday);
+//}
+union D
+{
+	int d1;
+	float d2;
+}d;
+int main()
+{
+	cout << &d.d1 << endl;
+	cout << &d.d2 << endl;
+	cout << &d << endl;
+	d.d1 = 10;
+	cout << d.d2 << endl;
+
+}
