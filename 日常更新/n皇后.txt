@@ -1,0 +1,46 @@
+```
+public class queen {
+    public static void main(String[] args) {
+        int n = 4;
+        int q[] = new int[n + 1];//皇后位置
+        int i = 1;
+        for (; i <= n; i++) {
+            q[i] = 0;
+        }
+        int answer = 1;
+        int j = 1;
+        Z z = new Z();
+        while (j >= 1) {
+            q[j] = q[j] + 1;//第j个皇后当前位置
+            while (q[j] <= n && z.check(q, j)) {//判断第j个皇后是否合法
+                q[j] = q[j] + 1;//不合法则位置加一
+            }
+            if (q[j] <= n) {
+                if (j == n) {
+                    System.out.print("方案" + answer++ + ":");
+                    for (; j <= n; j++) {
+                        System.out.print(q[j] + "\t");//输出n皇后的一组解
+                    }
+                    System.out.println("\n");
+                } else {
+                    j = j + 1;//继续往后排列
+                }
+            } else {//第j个皇后找不到合法位置
+                q[j] = 0;
+                j = j - 1;//回溯
+            }
+        }
+
+    }
+}
+class Z{
+    public boolean check(int[] q,int j){//检查第j个皇后是否合法
+        for(int i = 1;i < j;i++){
+            if(q[i] == q[j] ||  Math.abs(q[i] - q[j]) == Math.abs(i - j)){
+                return true;
+            }
+        }
+        return false;
+    }
+}
+```
