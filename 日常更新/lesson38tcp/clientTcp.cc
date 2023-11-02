@@ -11,7 +11,13 @@ static void Usage(std::string proc)
     std::cerr << "Example:\n\t" << proc << " 127.0.0.1 8081\n"
         << std::endl;
 }
-
+/*
+***客户端主要任务是输入服务器端的ip地址和端口号1.创建流式套接字sock，2.向远端服务器发起连接请求connect(就是将 sock套接字 和 远端的服务器的sockaddr_in连接)
+***3.只要连接成功了，就可以通过write向sock中写入信息。
+***
+***
+***
+*/
 int main(int argc, char* argv[])
 {
     if(argc != 3)

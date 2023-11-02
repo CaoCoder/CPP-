@@ -9,16 +9,26 @@ class ServerTcp;
 class ThreadData
 {
 public:
-    uint16_t clientPort_;
-    std::string clinetIp_;
-    int sock_;
-    ServerTcp *this_;
+    uint16_t clientPort_;//客户端端口号
+    std::string clinetIp_;//客户端ip
+    int sock_;//套接字
+    ServerTcp *this_;//服务器对象指针。
 public:
     ThreadData(uint16_t port, std::string ip, int sock,  ServerTcp *ts)
         : clientPort_(port), clinetIp_(ip), sock_(sock),this_(ts)
     {}
 };
-
+/*
+***服务端的主要工作是创建服务端对象，然后让对象调用初始化init函数()进行bind服务器listensock 和 监听客户端的sock
+***init函数的工作 
+***1.创建监听套接字listenSock_
+***2.将 监听套接字listenSock_ 和  服务端的sockaddr_in 信息绑定bind起来。
+***3.监听客户端的套接字
+***然后让对象调用loop()函数
+***1.调用accept函数进行获取连接.(通过从 监听套接字listenSock 和 获取的客户端sockaddr_in peer信息 来返回一个服务端套接字serviceSock来为这一个 客户端 提供服务)。
+***2.通过accept连接客户端得到的的serviceSock这个套接字，对客户端进行提供服务 transService英汉互译服务
+***3.transService先从这个accept连接函数得到的套接字进行读取，然后进行大小写转换，再把这个结果write回serviceSock中。
+*/
 class ServerTcp
 {
 public:
@@ -78,6 +88,8 @@ public:
     {
         pthread_detach(pthread_self());//设置线程分离
         ThreadData* td = static_cast<ThreadData*>(args);
+       //为了能够在静态函数中访问类成员函数，需要通过指针访问。
+        //设置成static可以让所有对象共享
         td->this_->transService(td->sock_, td->clinetIp_,td->clientPort_);
         delete td;
         return nullptr;
@@ -119,10 +131,52 @@ public:
             logMessage(DEBUG, "accept: %s | %s[%d], socket fd: %d",
                        strerror(errno), peerIp.c_str(), peerPort, serviceSock);
             //5.提供服务
+
+                //5.1多进程--版本
+//             pid_t id = fork();
+//             assert(id != -1);
+//             if(id == 0)
+//             {
+//                 close(listenSock_);//建议关闭
+//                 //子进程
+//                 transService(serviceSock, peerIp, peerPort);
+//                 exit(0);//进入僵尸进程
+//             }  
+//             /*在调用fork()函数后，子进程会复制父进程的所有资源，包括套接字。
+// 子进程中也有一个对应的serviceSock副本，但在子进程中并不需要使用这个套接字来接受新的连接。
+// 如果父进程不关闭serviceSock，那么在父进程和子进程中都存在这个套接字的引用，可能会导致资源泄露或意外的行为。
+// 通过在父进程中执行close(serviceSock)，父进程关闭了这个套接字，从而确保只有子进程在使用serviceSock。*/
+//                  // 父进程
+//              close(serviceSock); //这一步是一定要做的！
+//              pid_t ret = waitpid(id, nullptr, 0); //就用阻塞式
+//             assert(ret > 0);
+//             (void)ret;
+
             //5.2多线程版本
-            ThreadData* td = new ThreadData(peerPort, peerIp, serviceSock, this);
-            pthread_t tid;
-            pthread_create(&tid, nullptr, threadRoutine, (void*)td);
+            // ThreadData* td = new ThreadData(peerPort, peerIp, serviceSock, this);
+            // pthread_t tid;
+            // pthread_create(&tid, nullptr, threadRoutine, (void*)td);
+
+            //v5.3版本，爷孙多进程
+                        //爷爷进程
+            pid_t id = fork();
+            if(id == 0)
+            {
+                // 爸爸进程
+                close(listenSock_);//建议
+                // 又进行了一次fork，让 爸爸进程
+                if(fork() > 0) exit(0);
+                // 孙子进程 -- 就没有爸爸 -- 孤儿进程 -- 被系统领养 -- 回收问题就交给了系统来回收
+                transService(serviceSock, peerIp, peerPort);
+                exit(0);
+            }
+            // 父进程
+            close(serviceSock); //这一步是一定要做的！
+            // 爸爸进程直接终止，立马得到退出码，释放僵尸进程状态
+            pid_t ret = waitpid(id, nullptr, 0); //就用阻塞式
+            assert(ret > 0);
+            (void)ret;
+
         }
 
     }
@@ -132,54 +186,66 @@ public:
 
 
         // 大小写转化服务
-    // TCP && UDP: 支持全双工
-    void transService(int sock, const std::string &clientIp, uint16_t clientPort)
+    //使用tcp或udp
+    //套接字 客户端ip 客户端port
+    void transService(int sock, const std::string& clientIp, uint16_t clientPort)
     {
         assert(sock >= 0);
         assert(!clientIp.empty());
-        assert(clientPort >= 1024);
+        assert(clientPort >= 1024);//端口号最好大于1000
 
         char inbuffer[BUFFER_SIZE];
-        while (true)
+        while(true)
         {
-            ssize_t s = read(sock, inbuffer, sizeof(inbuffer) - 1); //我们认为我们读到的都是字符串
-            if (s > 0)
+            //从套接字中读取消息
+            ssize_t s = read(sock, inbuffer, sizeof(inbuffer)- 1);
+            if(s > 0)
             {
-                // read success
+                //read success
                 inbuffer[s] = '\0';
+                //不考虑大小写
                 if(strcasecmp(inbuffer, "quit") == 0)
                 {
-                    logMessage(DEBUG, "client quit -- %s[%d]", clientIp.c_str(), clientPort);
+                    logMessage(DEBUG, "client quit -- %s[%d]",clientIp.c_str(), clientPort);
                     break;
                 }
-                logMessage(DEBUG, "trans before: %s[%d]>>> %s", clientIp.c_str(), clientPort, inbuffer);
-                // 可以进行大小写转化了
+                logMessage(DEBUG, "trans before: %s[%d]>>>%s", clientIp.c_str(),clientPort, inbuffer);
+                //读取上来可以转换大小写了。
                 for(int i = 0; i < s; i++)
                 {
-                    if(isalpha(inbuffer[i]) && islower(inbuffer[i])) 
+                    //如果是字母并且是小写
+                    if(isalpha(inbuffer[i]) && islower(inbuffer[i]))
+                    {
+                        //转化为大写，并重新写入源字符串
                         inbuffer[i] = toupper(inbuffer[i]);
+                    }
                 }
                 logMessage(DEBUG, "trans after: %s[%d]>>> %s", clientIp.c_str(), clientPort, inbuffer);
 
+                //写入到套接字中？？
+                //重新写入sock中
                 write(sock, inbuffer, strlen(inbuffer));
+                
             }
             else if (s == 0)
             {
-                // pipe: 读端一直在读，写端不写了，并且关闭了写端，读端会如何？s == 0，代表对端关闭
-                // s == 0: 代表对方关闭,client 退出
-                logMessage(DEBUG, "client quit -- %s[%d]", clientIp.c_str(), clientPort);
-                break;
+                //s == 0表示对端关闭
+                //pipe: 读端一直在读，写端不写了，关闭了写端，读端也关闭掉。
+                 logMessage(DEBUG, "client quit -- %s[%d]", clientIp.c_str(), clientPort);
+                 break;//退出服务
             }
             else
             {
                 logMessage(DEBUG, "%s[%d] - read: %s", clientIp.c_str(), clientPort, strerror(errno));
-                break;
+                break;//退出服务
+
             }
         }
 
-        // 只要走到这里，一定是client退出了，服务到此结束
-        close(sock); // 如果一个进程对应的文件fd，打开了没有被归还，文件描述符泄漏！
-        logMessage(DEBUG, "server close %d done", sock);
+        //只要走到这里，一定是client退出了，服务到此结束。
+        close(sock);//如果一个进程对应的文件fd，打开了没有被归还，文件描述符会泄露
+        //文件描述符是有限的。
+         logMessage(DEBUG, "server close %d done", sock);
     }
 
 
@@ -215,9 +281,10 @@ int main(int argc, char* argv[])
     {
         ip = argv[2];
     }
-    ServerTcp svr(port, ip);
+    ServerTcp svr(port, ip);//创建服务端对象
     svr.init();//初始化
     svr.loop();//循环
 
     return 0;
 }
+
