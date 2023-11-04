@@ -17,7 +17,7 @@ public:
     }
     void unlock()
     {
-        pthread_mutex_lock(&lock_);
+        pthread_mutex_unlock(&lock_);
     }
     ~Mutex()
     {
@@ -35,7 +35,7 @@ public:
         :mutex_(mutex)
         {
             mutex_->lock();
-            std::cout << "加锁成功..." << std::endl;
+            std::cout << "加锁成功le..." << std::endl;
         }
     ~LockGuard()
     {

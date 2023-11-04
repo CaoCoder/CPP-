@@ -37,14 +37,15 @@ public:
         static Mutex mutex;
         if(nullptr == instance)
         {
-            LockGuard lockguard(&mutex);//进入代码块加锁，退出代码块直接解锁
+            LockGuard lockguard(&mutex);//进入代码块加锁，退出代码块直接解锁 另个花括号之间就是作用域
             if(nullptr == instance)
             {
                 instance = new ThreadPool<T>();
             }
             
         }
-
+        cout << "getInstance成功" <<endl;
+        fflush(stdout);
         return instance;
     }
 
@@ -57,12 +58,12 @@ public:
         {
             tp->lockQueue();//加锁
             while (!tp->haveTask())//判断队列是否有任务
-            {
-                tp->waitForTask();//在条件变量下去等待
+            { 
+                tp->waitForTask();//没有任务 就在条件变量下去等待
             }
             T t = tp->pop();//拿数据到线程上下文
             tp->unlockQueue();//解锁
-            t();//
+            t();//处理任务
         }
     }
 
@@ -76,6 +77,7 @@ public:
             pthread_create(&temp, nullptr, threadRoutine, this);
         }
         isStart_ = true;//只运行一次？
+        cout << "start成功1" << endl;
     }
     void push(const T& in)
     {
@@ -108,6 +110,23 @@ private:
     {
         return !taskQueue_.empty();
     }
+    /*
+        pthread_cond_wait() 的调用流程如下：
+
+    1.当前线程调用 pthread_cond_wait(&cond_, &mutex_) 后，它会进入阻塞状态，等待条件变量的信号。
+    2.在等待期间，pthread_cond_wait() 会自动释放 &mutex_ 所指向的互斥锁，允许其他线程进入临界区。
+    3.当某个线程满足了条件并调用 pthread_cond_signal() 或 pthread_cond_broadcast() 发送信号时，等待的线程会被唤醒。
+    4.一旦被唤醒，pthread_cond_wait() 函数会重新获取 &mutex_ 所指向的互斥锁，并继续执行后续的代码。
+
+   需要注意的是，在调用 pthread_cond_wait() 之前，必须先获取 &mutex_ 所指向的互斥锁，以确保没有竞争条件。因此，通常会按照如下方式使用条件变量：
+
+    1.获取互斥锁 &mutex_。
+    2.检查条件是否满足，如果不满足，则调用 pthread_cond_wait(&cond_, &mutex_) 进行等待。
+    3.当条件满足时，执行相应的操作。
+    4.发送信号或广播通知其他线程条件已满足。
+    5.释放互斥锁 &mutex_。
+
+    */
     void waitForTask()
     {
         pthread_cond_wait(&cond_, &mutex_);
