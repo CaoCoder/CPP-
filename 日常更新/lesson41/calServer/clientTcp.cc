@@ -1,7 +1,7 @@
 
 #include "util.hpp"
 #include "Protocol.hpp"
-
+#include <cstdio>
 volatile bool quit = false;
 
 static void Usage(std::string proc)
@@ -54,19 +54,41 @@ int main(int argc, char* argv[])
     while(!quit)
     {
         message.clear();
-        std::cout << "请输入你的消息>>> " ;
+        std::cout << "请输入表达式>>> " ; //1 + 1
         std::getline(std::cin, message);//结尾不会有\n
-        if(strcasecmp(message.c_str(), "quit") == 0)//不区分大小写的匹配
+        if(strcasecmp(message.c_str(), "quit") == 0)
+        {
+            //不区分大小写的匹配
             quit = true;
+            continue;
+        }
+
+        Request req;//定义请求对象
+        std::string package;
+        req.serialize(&package);//序列化为字符串 1 + 1 
+        package = encode(package, package.size());//加密 为字符串添加 长度 报头
+     
 
         ssize_t s = write(sock, message.c_str(), message.size());//像服务端sock写入
         if(s > 0)//写入成功
         {
-            message.resize(1024);
-            ssize_t s = read(sock, (char*)(message.c_str()), 1024);
+            char buff[1024];
+            //读取服务端回复的
+            size_t s = read(sock, buff, sizeof(buff) - 1);
             if(s > 0)
-                message[s] = 0;//设置为C风格
-            std::cout << "Server Echo>>> " << message << std::endl;
+                buff[s] = 0;
+            std::string echoPackage = buff;//结果
+            Response resp;
+            uint32_t  len = 0;
+            std::string tmp = decode(echoPackage, &len);//结果进行解码
+            if(len > 0)
+            {
+                echoPackage = tmp;
+                resp.deserialize(echoPackage);//反序列化 为 结构体
+                //退出码 结果
+                printf("[exitcode: %d] %d\n", resp.exitCode_, resp.result_);
+            }
+
             
         }
         else if(s <= 0)//对端关闭 或写入失败

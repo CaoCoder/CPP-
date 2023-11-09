@@ -59,7 +59,7 @@ public:
             tp->lockQueue();//加锁
             while (!tp->haveTask())//判断队列是否有任务
             { 
-                tp->waitForTask();//没有任务 就在条件变量下去等待
+                tp->waitForTask();//没有任务 就在条件变量下去等待(会自动释放锁，因为其他地方还需要进入临界区，比如push函数)
             }
             T t = tp->pop();//拿数据到线程上下文
             tp->unlockQueue();//解锁

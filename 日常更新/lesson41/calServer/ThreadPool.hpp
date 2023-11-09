@@ -99,6 +99,7 @@ public:
             tp->lockQueue();
             while (!tp->haveTask())
             {
+                //没有任务 就在条件变量下去等待(会自动释放锁，因为其他地方还需要进入临界区，比如push函数)
                 tp->waitForTask();
             }
             //这个任务就被拿到了线程的上下文中
@@ -108,7 +109,7 @@ public:
         }
     }
 
-        void start()
+    void start()
     {
         assert(!isStart_);
         for (int i = 0; i < threadNum_; i++)
