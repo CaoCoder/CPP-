@@ -42,7 +42,7 @@ int main(int argc, char* argv[])
 
     //2.2发起connect请求
 
-    if(connect(sock, (const struct sockaddr* )&server, sizeof(server) != 0))
+    if(connect(sock, (const struct sockaddr* )&server, sizeof(server) )!= 0)
     {
         std::cerr << "connect: " << strerror(errno) << std::endl;
         exit(CONN_ERR);
@@ -64,23 +64,41 @@ int main(int argc, char* argv[])
         }
 
         Request req;//定义请求对象
+        if(!makeRequest(message, &req)) continue;
+
         std::string package;
         req.serialize(&package);//序列化为字符串 1 + 1 
-        package = encode(package, package.size());//加密 为字符串添加 长度 报头
-     
 
-        ssize_t s = write(sock, message.c_str(), message.size());//像服务端sock写入
+        std::cout << req.x_ << req.op_ << req.y_ << std::endl;
+
+        std::cout << "debug->serialize-> " << package << std::endl;
+        package = encode(package, package.size());//加密 为字符串添加 长度 报头
+        std::cout << "debug->encode-> \n" << package << std::endl;
+       
+        ssize_t s = write(sock, package.c_str(), package.size());//像服务端sock写入
         if(s > 0)//写入成功
         {
             char buff[1024];
             //读取服务端回复的
+            /*
+            write是将数据拷贝到了文件描述符对应的发送缓冲区 
+             read是从文件描述符对应的接收缓冲区中读取数据  
+             数据是在不同的缓冲区中
+             所以此时的客户端的read是无法读到客户端发送给服务端数据
+            */
+           std::cout << "写入成功" << std::endl;
             size_t s = read(sock, buff, sizeof(buff) - 1);
             if(s > 0)
+            {
+                std::cout << "读取成功" << std::endl;
                 buff[s] = 0;
+
+            }
             std::string echoPackage = buff;//结果
             Response resp;
             uint32_t  len = 0;
             std::string tmp = decode(echoPackage, &len);//结果进行解码
+            std::cout << "解码成功" << std::endl;
             if(len > 0)
             {
                 echoPackage = tmp;
@@ -100,5 +118,5 @@ int main(int argc, char* argv[])
     //停止写入记得关闭sock，本质就是文件描述符。也就是文件。
     close(sock);
     return 0;
-
+    
 }

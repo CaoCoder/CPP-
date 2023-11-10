@@ -3,12 +3,23 @@
 #include <iostream>
 #include <string>
 #include <assert.h>
+#include <string.h>
+#include "util.hpp"
+/*
+头文件提供了代码的声明部分，帮助编译器正确解析代码，
+而库文件提供了代码的实际定义部分，
+并需要在编译时通过 -l 选项告知链接器进行链接。
+*/
+#include <jsoncpp/json/json.h>
+
 
 #define CRLF "\r\n"
 #define CRLF_LEN strlen(CRLF)
 #define SPACE " "
 #define SPACE_lEN strlen(SPACE)
 
+
+#define OPS "+-*/%"
 //自己定制协议
 
 //定制 请求 x_ op y_
@@ -68,17 +79,44 @@ public:
     {
 
     }
-    //序列化
+    //序列化 把 结构化数据 -> 字符串
     void serialize(std::string* out)
     {
+#ifdef MY_SELF
+        std::string xstr = std::to_string(x_);
+        std::string ystr = std::to_string(y_);
+
+        *out = xstr;
+        *out += SPACE;
+        *out += op_;
+        *out += SPACE;
+        *out += ystr;
+#else
+    //json
+    //1.Value对象，万能对象
+    //2.json是基于KV
+    //4.有两套操作方法。序列化的时候，会将所有的数据内容转化为字符串
+    Json::Value root;
+    root["x"] = x_;
+    root["y"] = y_;
+    root["op"] = op_;
+
+    // Json::FastWriter fw;
+    Json::StyledWriter fw;
+    //这里使用的是 Json::FastWriter，它会生成紧凑的 JSON 字符串，
+    //可能会牺牲一些可读性和格式化。如果需要更具可读性的输出，
+    //可以使用 Json::StyledWriter 或 Json::StreamWriter 等其他写入器类。
+    *out = fw.write(root);
+#endif
 
     }
     //反序列化 字符串 -> 结构化的数据
-    bool deserialize(const std::string& in)
+    bool deserialize(std::string& in)
     {
+#ifdef MY_SELF
         //100 + 200
         std::size_t spaceOne = in.find(SPACE);//从前往后找空格
-        if(std::string::npos == spaceOne);
+        if(std::string::npos == spaceOne)
             return false;
         std::size_t spaceTwo = in.rfind(SPACE);//从后往前找空格
         if(std::string::npos == spaceTwo)
@@ -86,7 +124,7 @@ public:
         
         std::string dataOne = in.substr(0, spaceOne);
         std::string dataTwo = in.substr(spaceTwo + SPACE_lEN);
-        std::string oper = in.substr(spaceOne + SPACE_lEN);
+        std::string oper = in.substr(spaceOne + SPACE_lEN, spaceTwo - (spaceOne + SPACE_lEN));
 
         if(oper.size() != 1)
             return false;
@@ -97,7 +135,16 @@ public:
         op_ = oper[0];
 
         return true;
+#else
 
+        Json::Value root;
+        Json::Reader rd;
+        rd.parse(in, root);//读取并将解析结果存储在 root 对象中
+        x_ = root["x"].asInt();
+        y_ = root["y"].asInt();
+        op_ = root["op"].asInt();
+        return true;
+#endif
     }
     void debug()
     {
@@ -136,6 +183,7 @@ public:
     //序列化 把结构 变为 字符串数据
     void serialize(std::string* out)
     {
+#ifdef MY_SELF
         //"exitCode_ result_"
         std::string ec = std::to_string(exitCode_);
         std::string res = std::to_string(result_);
@@ -143,12 +191,39 @@ public:
         *out = ec;
         *out += SPACE;
         *out += res;
-    }
-    //反序列化
-    void deserialize(std::string& in)
-    {
-      
+#else
 
+        Json::Value root;
+        root["exitcode"] = exitCode_;
+        root["result"] = result_;
+        Json::FastWriter fw;
+        *out = fw.write(root);
+#endif
+    }
+    //反序列化 将反序列化后的数据写入到内部成员，形成结构化数据
+    bool deserialize(std::string& in)
+    {
+#ifdef MY_SELF
+        // "0 100" 状态码 结果
+        std::size_t pos = in.find(SPACE);
+        if(std::string::npos == pos)
+            return false;
+        std::string codestr = in.substr(0, pos);//提取状态码
+        std::string reststr = in.substr(pos + SPACE_lEN);//跳过空格提取结果
+
+        //将反序列化后的数据写入到内部成员，形成结构化数据
+        exitCode_ = atoi(codestr.c_str());
+        result_ = atoi(reststr.c_str());
+
+        return true;
+#else
+        Json::Value root;
+        Json::Reader rd;
+        rd.parse(in, root);
+        exitCode_ = root["exitcode"].asInt();
+        result_ = root["result"].asInt();
+        return true;
+#endif
     }
 
 
@@ -160,3 +235,23 @@ public:
     int result_;
 
 };
+#define OPS "+-*/%"
+bool makeRequest(const std::string& str, Request* req)
+{
+        // 123+1  1*1 1/1
+    char strtmp[BUFFER_SIZE];
+    snprintf(strtmp, sizeof strtmp, "%s", str.c_str());
+    char *left = strtok(strtmp, OPS);
+    if (!left)
+        return false;
+    char *right = strtok(nullptr, OPS);
+    if (!right)
+        return false;
+    char mid = str[strlen(left)];
+
+    req->x_ = atoi(left);
+    req->y_ = atoi(right);
+    req->op_ = mid;
+    return true;
+
+}

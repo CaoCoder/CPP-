@@ -28,7 +28,7 @@ class ThreadPool
 {
 private:
     ThreadPool(int threadNum = gThreadNum)
-        :threadNmu_(threadNum)
+        :threadNum_(threadNum)
         ,isStart_(false)
         {
             assert(threadNum_ > 0);
@@ -151,7 +151,7 @@ private:
 
 private:
     bool isStart_;
-    int threadNmu_;
+    int threadNum_;
     queue<T> taskQueue_;
     pthread_mutex_t mutex_;
     pthread_cond_t cond_;
@@ -160,5 +160,5 @@ private:
 
 };
 
-template <class T>
-ThreadPool<T>* instance = nullptr;//加不加类域的区别
+template<class T>
+ThreadPool<T>* ThreadPool<T>::instance = nullptr;//加不加类域的区别

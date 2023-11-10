@@ -70,6 +70,11 @@ int main(int argc, char* argv[])
         {
             quit = true;
         }
+        /*
+            请问 为什么我客户端将message消息write写入到sock描述符中之后，然后s>0 又立马从sock读取信息，这时候读到信息就是服务端发送过来的呢？
+            我在想我78行write之后，84行又read，应该读取的就是write进去的信息。比如我输入 “hello word”，我觉得读出来的也应该客户端发送的“hello word”。
+            我上网查的是这个read是阻塞式的等待服务端发送消息，如果没消息，就一直等待。然后我觉得他本来也应该是有消息的.
+        */
         //写入到sock文件中
         ssize_t s = write(sock, message.c_str(), message.size());
         if(s >  0 )//s是返回的字节的个数

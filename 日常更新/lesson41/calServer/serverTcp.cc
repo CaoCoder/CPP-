@@ -16,6 +16,41 @@
 #include <netinet/in.h>
 #include <sys/socket.h>
 class ServerTcp;
+
+/*
+    数据流格式：
+    1.客户端在 请求端 输入 1 + 1的值，这时候需要先进行  req.serialize序列化，然后对字符串先进encode添加报头。这样就成为了能在网络中传输的字符串
+    2.服务端 拿到这个完整的报文，先去decode掉报头，得到序列化的字符串
+    3.服务端再把字符串  req.deserialize反序列化 转化为 结构化的数据。然后进行计算得到的值result_,exitcode_给 响应端的对象。
+    4.服务端再把响应端的结果 对象进行 resp.serialize序列化 为字符串，再encode添加报头，write回客户端。
+    5.客户端 拿到数据 进行decode去掉报头，得到序列化的字符串 
+    6.客户端 resp.deserialize再反序列化得到 结构体的数据 进行打印
+
+    总结：
+    1.req.serialize 
+        encode
+            decode
+                req.deserialize
+                结构化结果赋值给resp
+                resp.serialize
+            encode
+        decode
+    resp.deserialize
+
+
+    req.serialize //客户端序列化
+    encode          //加报头   传输给服务端
+    decode          //服务端解报头
+    req.deserialize// 服务端反序列化     拿到真正数据
+
+                   计算！！ 结构化结果赋值给resp
+
+    resp.serialize// 服务端序列化       
+    encode        //加报头     传输给客户端
+    decode          //客户端解报头
+    resp.deserialize//客户端反序列化     拿到真正数据
+        
+*/
 static Response calculator(const Request &req)
 {
     Response resp;
@@ -64,6 +99,7 @@ void netCal(int sock, const std::string &clientIp, uint16_t clientPort)
     {
         Request req;
         char buff[128];
+        //从传过来的servicesock中读取数据
         ssize_t s = read(sock, buff, sizeof(buff) - 1);
         if (s == 0)
         {
@@ -76,16 +112,19 @@ void netCal(int sock, const std::string &clientIp, uint16_t clientPort)
                        clientIp.c_str(), clientPort, errno, strerror(errno));
             break;
         }
-
+        //走到这里说明 s > 0
         // read success
         buff[s] = 0;
-        inbuffer += buff;
+        inbuffer += buff;//这时候就是一个带有报头的字符串
+        std::cout << "inbuffer: " << inbuffer << std::endl;
         // 1. 检查inbuffer是不是已经具有了一个strPackage
         uint32_t packageLen = 0;
         std::string package = decode(inbuffer, &packageLen); //TODO
         if (packageLen == 0) continue; // 无法提取一个完整的报文，继续努力读取吧
+
+        std::cout << "package: " << package << std::endl;
         // 2. 已经获得一个完整的package
-        if (req.deserialize(package))
+        if (req.deserialize(package))//字符串变为 结构化数据
         {
             req.debug();
             // 3. 处理逻辑, 输入的是一个req，得到一个resp
@@ -93,6 +132,7 @@ void netCal(int sock, const std::string &clientIp, uint16_t clientPort)
             // 4. 对resp进行序列化
             std::string respPackage;
             resp.serialize(&respPackage);
+            cout << "结果" << respPackage << endl;
             // 5. 对报文进行encode -- //TODO
             respPackage = encode(respPackage, respPackage.size());
             // 6. 简单进行发送 -- 后续处理
@@ -130,7 +170,7 @@ public:
             logMessage(FATAL, "SOCKET: %s", strerror(errno));
             exit(SOCKET_ERR);
         }
-        logMessage(DEBUG, "socket: %s, %d", strerror(errno));
+        logMessage(DEBUG, "socket: %s, %d", strerror(errno), listenSock_);
 
         //2.bind绑定
         //2.1填充服务器信息
@@ -204,6 +244,7 @@ public:
     bool quitServer()
     {
         quit_ = true;
+        return true;
     }
 private:
     int listenSock_;
@@ -252,7 +293,7 @@ int main(int argc, char* argv[])
     std::string ip;
     if(argc == 3)
         ip = argv[2];
-    
+    //注册信号处理函数 sigHandler，将信号编号为 3（SIGQUIT 信号）与该处理函数关联。
     signal(3, sigHandler);
     ServerTcp svr(port, ip);
     svr.init();
