@@ -1,0 +1,94 @@
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>张文超页面</title>
+        <style>
+            * {
+                margin: 10px;
+                padding: 3px;
+            }
+            p {
+                /* 设置字体颜色 */
+                color: green;
+                /* 设置字体大小 */
+                font-size: 50px;
+            }
+            .pgreen {
+                color: aqua;
+                font-size: 20px;
+            }
+            #pid {
+                font-size: 20px;
+                font-family:sans-serif;
+                color: aqua;
+            }
+        </style>
+    </head>
+    <body id="myId">
+        hello Bit
+        <p id="pid">nihao <br/>Bit</p>
+        <h1>hello</h1>
+        <h2>hello</h2>
+        <h3>hello</h3>
+        <h4>hello</h4>
+        <h5>hello</h5>
+        <h6>hello</h6>
+        
+        <a href="https://www.baidu.com" target="_blank">
+            <img src="./知识星球.jpg"  alt="nihao" width="200" height="300">
+        </a>
+        <table align="center" border="1" cellpadding="5" cellspacing="1" width="200" height="20">
+            <tr class="pgreen">
+                <th>菜名</th>
+                <th>单价</th>
+                <th>折扣</th>
+            </tr>
+            <tr>
+                <td align="center">红烧茄子</td>
+                <td align="center">￥18</td>
+                <td align="center">8.8折</td>
+            </tr>
+            <tr>
+                <!--colspan合并列， rowspan合并行-->
+                <td colspan="3" align="right">总价：￥18</td>
+            </tr>
+        </table>
+        <ul>
+            <li>ul/li是无序列表</li>
+            <li>ul/li是无序列表</li>
+        </ul>
+        <ol>
+            <li>ol/li是有序列表</li>
+            <li>ol/li是有序列表</li>
+        </ol>
+        <dl>
+            <dt>dl/dt是小标题</dt>
+            <dd>dl/dd是围绕标题的描述</dd>
+            <dd>dl/dd是围绕标题的描述</dd>
+        </dl>
+
+        <form action="/upload" method="get" enctype="multipart/form-data">
+            <input type="text" name="text" placeholder="input标签默认是文本框"> <br/>
+            <input type="file" name="file" value="file是文件选择按钮框"><br/>
+            <input type="submit" name="提交" value="submit是提交按钮">点击这里就会向服务器提交表单域中的表单数据<br/>
+        </form>
+        <select>
+            <option selected="selected">--请选择年份--</option>
+            <option>1990</option>
+            <option>1991</option>
+            <option>1992</option>
+        </select>
+        <textarea name="文本域标签" id="" cols="30" rows="10" placeholder="textarea是文本域标签">
+        </textarea>
+        <div>nihao a</div><div>nihao a</div>
+        <span>leihoua</span><span>leihoua</span>
+        <header>头部容器标签</header>
+        <nav>导航容器标签</nav>
+        <article>内容容器标签</article>
+        <section>某个区域的容器标签</section>
+        <aside>侧边栏容器标签</aside>
+        <footer>尾部容器标签</footer>
+        <video src="https://www.runoob.com/try/demo_source/movie.mp4" controls="controls" type="video/mp4">video是视频控件标签</video>
+        <audio src="https://www.runoob.com/try/demo_source/horse.mp3" controls="controls" type="audio/mp3">audio是音频控件标签</audio>
+    </body>
+</html>
