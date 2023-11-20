@@ -1,0 +1,4 @@
+﻿  server.cpp
+E:\CPP复习代码\CPP-\windows网络会话\windows网络会话\server.cpp(14,9): warning C4068: 未知的杂注“argsused”
+E:\CPP复习代码\CPP-\windows网络会话\windows网络会话\server.cpp(43,11): warning C4101: “off”: 未引用的局部变量
+  windows网络会话.vcxproj -> E:\CPP复习代码\CPP-\windows网络会话\Debug\windows网络会话.exe
